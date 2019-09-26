@@ -1,11 +1,14 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
+#include <string>
 #include <vector>
 #include <tuple>
 #include <array>
 
 #include <nlohmann/json.hpp>
 
+#include "ivanp/string.hh"
 #include "ivanp/wls.hh"
 #include "ivanp/math/polynomial.hh"
 
@@ -13,6 +16,7 @@
   cout << "\033[36m" #var "\033[0m = " << (var) << endl;
 
 using namespace std;
+using ivanp::cat;
 
 int main(int argc, char* argv[]) {
   if (argc!=2) {
@@ -48,7 +52,8 @@ int main(int argc, char* argv[]) {
     if (skip(i)) continue;
     xs.push_back((edges[i]+edges[i+1])/2);
   }
-  TEST(xs.size())
+  // TEST(xs.size())
+  cout << endl;
 
   vector<double> cs(3), tcs(cs.size());
   vector<double> A;
@@ -57,8 +62,16 @@ int main(int argc, char* argv[]) {
     for (auto x : xs)
       A.push_back(pow(x,p));
 
+  vector<vector<string>> results;
+  results.emplace_back();
+  for (unsigned i=vars.size()-1; i; --i)
+    results[0].emplace_back(get<0>(vars[i]));
+  for (const auto& str : {"sig","bkg","signif"})
+    results[0].emplace_back(str);
+
   vector<array<double,2>> data = in["data"], mc = in["mc"];
   vector<double> ys(xs.size()), us(xs.size());
+  vector<unsigned> ii(nbins.size());
   double sig = 0;
   for (unsigned i=0, j=0, k=0; i<data.size(); ++i) {
     if (skip(j++)) {
@@ -69,26 +82,65 @@ int main(int argc, char* argv[]) {
     ys[k] = log(y);
     us[k] = data[i][1]/y;
     if (j == nbins[0]) {
+      results.emplace_back();
+      auto res = [&r=results.back()](const auto&... args){
+        r.emplace_back(cat(args...));
+      };
+
+      for (unsigned v=nbins.size()-1; v; --v) {
+        const auto& edges = get<1>(vars[v]);
+        res("[",edges[ii[v]],',',edges[ii[v]+1],")");
+      }
+      ++ii[1];
+      for (unsigned v=1; v<nbins.size(); ++v) {
+        if (ii[v]==nbins[v]) {
+          ii[v] = 0;
+          ++ii[v+1];
+        }
+      }
+
+      sig *= lumi;
+      // TEST(sig)
+      res(sig);
+
       ivanp::wls(A.data(),ys.data(),us.data(),xs.size(),cs.size(),cs.data());
-      for (auto c : cs)
-        TEST(c)
+      // for (auto c : cs)
+      //   TEST(c)
 
       ivanp::math::poly::transform_coords(121,8,3,cs.data(),tcs.data());
 
       const double
         bkg = (std::exp(tcs[0])/3)
             * ( tcs[1]*(tcs[1]*(tcs[1]+4) + 6*(tcs[2]+2)) + 8*(tcs[2]+3) );
-      TEST(bkg)
-
-      sig *= lumi;
-      TEST(sig)
+      // TEST(bkg)
+      res(bkg);
 
       const double signif = sig/sqrt(sig+bkg);
-      TEST(signif)
+      // TEST(signif)
+      res(signif);
 
       sig = 0;
       j = 0;
       k = 0;
     } else ++k;
   }
+
+  vector<unsigned> width(results[0].size());
+  for (const auto& r : results) {
+    for (unsigned i=0; i<r.size(); ++i) {
+      const auto len = r[i].size();
+      if (width[i] < len) width[i] = len;
+    }
+  }
+  for (unsigned j=0; j<results.size(); ++j) {
+    for (unsigned i=0; i<width.size(); ++i) {
+      if (i) cout << "  ";
+      if (i<vars.size()-1) cout << left;
+      else cout << right;
+      cout << setw(width[i]) << results[j][i];
+    }
+    cout << '\n';
+    if (!(j%nbins[1])) cout << '\n';
+  }
+  cout << endl;
 }
