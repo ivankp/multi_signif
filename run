@@ -1,0 +1,10 @@
+#!/bin/bash
+
+a=vars.txt
+b=vars.json
+
+if [ "$a" -nt "$b" ]; then
+  ./bin/bin data.dat mc.dat "$a" "$b"
+fi
+
+./bin/signif "$b"

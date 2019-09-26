@@ -10,6 +10,7 @@
 !etc/
 etc/test/.*
 
+!run
 !vars.txt
 
 **.swp
