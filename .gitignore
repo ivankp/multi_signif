@@ -1,0 +1,15 @@
+/*
+
+!.gitignore
+!.gitmodules
+!Makefile
+!README*
+!include/
+!src/
+
+!etc/
+etc/test/.*
+
+!vars.txt
+
+**.swp

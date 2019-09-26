@@ -1,0 +1,11 @@
+#!/bin/bash
+
+g++ -M -x c++ -std=c++14 -Iinclude - &>/dev/null <<EOF
+#include <nlohmann/json.hpp>
+int main() { }
+EOF
+if [ $? -ne 0 ]; then
+  mkdir -p include/nlohmann
+  wget -O include/nlohmann/json.hpp \
+    'https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp'
+fi
