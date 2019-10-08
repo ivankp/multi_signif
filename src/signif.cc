@@ -18,6 +18,13 @@
 using namespace std;
 using ivanp::cat;
 
+size_t utf8len(const char* s) {
+  size_t len = 0;
+  while (*s) len += (*s++ & 0xc0) != 0x80;
+  return len;
+}
+size_t utf8len(const std::string& s) { return utf8len(s.c_str()); }
+
 int main(int argc, char* argv[]) {
   if (argc!=2) {
     cout << "usage: " << argv[0] << " in.json\n";
@@ -66,7 +73,7 @@ int main(int argc, char* argv[]) {
   results.emplace_back();
   for (unsigned i=vars.size()-1; i; --i)
     results[0].emplace_back(get<0>(vars[i]));
-  for (const auto& str : {"sig","bkg","signif"})
+  for (const auto& str : {"sig","bkg","s/√(s+b)"})
     results[0].emplace_back(str);
 
   vector<array<double,2>> data = in["data"], mc = in["mc"];
@@ -128,7 +135,7 @@ int main(int argc, char* argv[]) {
   vector<unsigned> width(results[0].size());
   for (const auto& r : results) {
     for (unsigned i=0; i<r.size(); ++i) {
-      const auto len = r[i].size();
+      const auto len = utf8len(r[i]);
       if (width[i] < len) width[i] = len;
     }
   }
