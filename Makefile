@@ -30,7 +30,7 @@ $(TESTS): $(TESTS_DIR)/.%: $(TESTS_DIR)/%
 -include $(DEPS)
 
 # -------------------------------------------------------------------
-bin/bin: \
+bin/bin bin/count: \
   $(BLD)/ivanp/io/mem_file.o
 
 bin/signif: \
